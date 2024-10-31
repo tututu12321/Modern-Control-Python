@@ -1,0 +1,70 @@
+import numpy as np
+from scipy.signal import place_poles
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+
+# Define the system matrices
+A = np.array([[0, 1, 0], [0, 0, 1], [-2, -3, -4]])  # System matrix
+B = np.array([[0], [0], [1]])                       # Input matrix
+C = np.array([[1, 0, 0]])                           # Output matrix
+
+# Desired poles for state feedback and observer
+desired_poles_feedback = np.array([-1, -2, -3])     # Feedback poles
+desired_poles_observer = np.array([-5, -6, -7])     # Observer poles
+
+# Calculate State Feedback Gain K
+K = place_poles(A, B, desired_poles_feedback).gain_matrix
+print("State Feedback Gain, K:\n", K)
+
+# Calculate Observer Gain L
+L = place_poles(A.T, C.T, desired_poles_observer).gain_matrix.T
+print("Observer Gain, L:\n", L)
+
+# Define the closed-loop dynamics for the observer-based state feedback system
+def closed_loop_dynamics(t, x):
+    n = A.shape[0]
+    # Separate true state and observer state
+    x_true = x[:n]
+    x_hat = x[n:]
+    
+    # System output and estimated output
+    y = C @ x_true
+    y_hat = C @ x_hat
+    
+    # Control law based on estimated state
+    u = -K @ x_hat
+    
+    # True state dynamics
+    dx_true = A @ x_true + B @ u
+    
+    # Observer dynamics (state estimation error dynamics)
+    dx_hat = A @ x_hat + B @ u + L @ (y - y_hat)
+    
+    # Concatenate for ODE solver
+    return np.concatenate([dx_true.flatten(), dx_hat.flatten()])
+
+# Initial conditions for true and estimated states
+x0_true = np.array([1.0, 0.0, 0.0])  # Initial true state
+x0_hat = np.array([0.0, 0.0, 0.0])   # Initial estimated state
+x0 = np.concatenate([x0_true, x0_hat])
+
+# Time span for the simulation
+t_span = (0, 10)
+t_eval = np.linspace(t_span[0], t_span[1], 500)
+
+# Solve the system dynamics
+solution = solve_ivp(closed_loop_dynamics, t_span, x0, t_eval=t_eval)
+x_true = solution.y[:3, :]
+x_hat = solution.y[3:, :]
+
+# Plotting the true state vs. estimated state
+plt.figure(figsize=(12, 8))
+for i in range(3):
+    plt.plot(t_eval, x_true[i, :], label=f'True State x{i+1}')
+    plt.plot(t_eval, x_hat[i, :], '--', label=f'Estimated State x{i+1}')
+plt.xlabel("Time (s)")
+plt.ylabel("State Value")
+plt.title("True States and Estimated States (Observer and State Feedback)")
+plt.legend()
+plt.grid(True)
+plt.show()
