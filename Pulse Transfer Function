@@ -1,0 +1,58 @@
+def pulse_transfer_function(input_signal, numerator, denominator):
+    """
+    Computes the output of a discrete-time system represented by a pulse transfer function.
+    
+    Parameters:
+    - input_signal: Current input signal value (u[k]).
+    - numerator: List of numerator coefficients [b_m, ..., b_1, b_0].
+    - denominator: List of denominator coefficients [a_n-1, ..., a_1, a_0] (excluding the leading 1 for y[k]).
+
+    Returns:
+    - output: The computed output y[k].
+    """
+    # Orders of the numerator and denominator
+    m = len(numerator) - 1
+    n = len(denominator)
+    
+    # Initialize storage for previous inputs and outputs
+    if 'input_history' not in pulse_transfer_function.__dict__:
+        pulse_transfer_function.input_history = [0] * (m + 1)
+        pulse_transfer_function.output_history = [0] * n
+    
+    # Shift input and output history to prepare for new values
+    pulse_transfer_function.input_history = [input_signal] + pulse_transfer_function.input_history[:-1]
+    pulse_transfer_function.output_history = [0] + pulse_transfer_function.output_history[:-1]
+    
+    # Calculate the output y[k] based on the difference equation
+    output = sum(numerator[i] * pulse_transfer_function.input_history[i] for i in range(m + 1))
+    output -= sum(denominator[i] * pulse_transfer_function.output_history[i] for i in range(n))
+
+    # Update the latest output in the output history
+    pulse_transfer_function.output_history[0] = output
+    
+    return output
+
+# Example Usage
+# Define transfer function coefficients for H[z] = (0.5 + 0.25z^(-1)) / (1 + 0.8z^(-1) + 0.15z^(-2))
+numerator = [0.5, 0.25]
+denominator = [0.8, 0.15]
+
+# Simulation of the pulse response over a set number of time steps
+num_steps = 20
+response = []
+for k in range(num_steps):
+    # Input pulse: 1 at k=0, 0 afterward
+    input_signal = 1 if k == 0 else 0
+    output_signal = pulse_transfer_function(input_signal, numerator, denominator)
+    response.append(output_signal)
+
+# Plotting the response
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(10, 5))
+plt.stem(range(num_steps), response, use_line_collection=True)
+plt.xlabel("Time Step k")
+plt.ylabel("Output y[k]")
+plt.title("Pulse Response of Discrete-Time System")
+plt.grid()
+plt.show()
