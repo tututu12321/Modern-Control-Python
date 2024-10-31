@@ -1,0 +1,81 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Simulation parameters
+dt = 0.001  # Time step
+steps = 10000  # Number of steps
+
+# Initial conditions and time array
+t = [0.0]
+x1_arr = [-1.0]
+x2_arr = [0.0]
+z_arr = [0.0]
+
+# Disturbance d(t) = -1 and reference r(t) = 1
+d = -1.0
+r = 1.0
+
+# Feedback gain settings for the first case
+# Example 13.3: Set closed-loop poles at -3 (triple root)
+f1, f2, g = 21, 4, 27
+
+# Simulation loop
+for i in range(steps):
+    x1 = x1_arr[-1] + (0 * x1_arr[-1] + 1 * x2_arr[-1] + 0 * z_arr[-1] - 0.0 * (f1 * x1_arr[-1] + f2 * x2_arr[-1] - g * z_arr[-1]) + 0.0) * dt
+    x2 = x2_arr[-1] + (-6 * x1_arr[-1] - 5 * x2_arr[-1] + 0 * z_arr[-1] - 1.0 * (f1 * x1_arr[-1] + f2 * x2_arr[-1] - g * z_arr[-1]) - d) * dt
+    z = z_arr[-1] + (-1 * x1_arr[-1] + 0 * x2_arr[-1] + 0 * z_arr[-1] - 0.0 * (f1 * x1_arr[-1] + f2 * x2_arr[-1] - g * z_arr[-1]) + r) * dt
+
+    x1_arr.append(x1)
+    x2_arr.append(x2)
+    z_arr.append(z)
+    t.append(t[-1] + dt)
+
+# Plotting the results for the first case
+plt.figure(figsize=(10, 5))
+plt.plot(t, x1_arr, label='$x_1$ (Position)')
+plt.plot(t, x2_arr, label='$x_2$ (Velocity)')
+plt.plot(t, z_arr, label='$z$ (Integral error)')
+plt.xlabel("Time (s)")
+plt.ylabel("Response")
+plt.title("Servo System Response with Closed-Loop Pole at -3 (Triple Root)")
+plt.legend()
+plt.grid()
+plt.xlim(0, 5)
+plt.ylim(-2, 3)
+plt.tight_layout()
+plt.show()
+
+# Second case: Set closed-loop poles at -3, -3 ± j2
+t = [0.0]
+x1_arr = [-1.0]
+x2_arr = [0.0]
+z_arr = [0.0]
+
+# Feedback gain for the second case
+f1, f2, g = 25, 4, 39
+
+# Simulation loop for the second case
+for i in range(steps):
+    x1 = x1_arr[-1] + (0 * x1_arr[-1] + 1 * x2_arr[-1] + 0 * z_arr[-1] - 0.0 * (f1 * x1_arr[-1] + f2 * x2_arr[-1] - g * z_arr[-1]) + 0.0) * dt
+    x2 = x2_arr[-1] + (-6 * x1_arr[-1] - 5 * x2_arr[-1] + 0 * z_arr[-1] - 1.0 * (f1 * x1_arr[-1] + f2 * x2_arr[-1] - g * z_arr[-1]) - d) * dt
+    z = z_arr[-1] + (-1 * x1_arr[-1] + 0 * x2_arr[-1] + 0 * z_arr[-1] - 0.0 * (f1 * x1_arr[-1] + f2 * x2_arr[-1] - g * z_arr[-1]) + r) * dt
+
+    x1_arr.append(x1)
+    x2_arr.append(x2)
+    z_arr.append(z)
+    t.append(t[-1] + dt)
+
+# Plotting the results for the second case
+plt.figure(figsize=(10, 5))
+plt.plot(t, x1_arr, label='$x_1$ (Position)')
+plt.plot(t, x2_arr, label='$x_2$ (Velocity)')
+plt.plot(t, z_arr, label='$z$ (Integral error)')
+plt.xlabel("Time (s)")
+plt.ylabel("Response")
+plt.title("Servo System Response with Closed-Loop Pole at -3, -3 ± j2")
+plt.legend()
+plt.grid()
+plt.xlim(0, 5)
+plt.ylim(-2, 3)
+plt.tight_layout()
+plt.show()
