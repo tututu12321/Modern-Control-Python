@@ -1,0 +1,58 @@
+import numpy as np
+from scipy.linalg import solve_continuous_are
+from scipy.signal import StateSpace, lsim
+import matplotlib.pyplot as plt
+
+# システム行列の定義（例として質点系の2次元システム）
+A = np.array([[0, 1], [-1, -1]])
+B = np.array([[0], [1]])
+C = np.array([[1, 0]])
+D = np.array([[0]])
+
+# 状態空間モデルの作成
+system = StateSpace(A, B, C, D)
+
+# LQRの重み行列の定義
+Q = np.array([[1, 0], [0, 1]])  # 状態の重み行列
+R = np.array([[1]])             # 入力の重み行列
+
+# 1. Riccati方程式を解いて最適ゲイン K を計算
+P = solve_continuous_are(A, B, Q, R)
+K = np.linalg.inv(R) @ B.T @ P
+print("LQR Feedback Gain K:", K)
+
+# 2. フィードバックゲインを適用した閉ループシステムの行列
+A_cl = A - B @ K
+closed_loop_system = StateSpace(A_cl, B, C, D)
+
+# 3. シミュレーション設定
+t = np.linspace(0, 10, 500)  # シミュレーション時間
+u = np.zeros_like(t)          # 入力を0に設定（自由応答）
+x0 = [1, 0]                   # 初期状態
+
+# システム応答の計算
+_, y, x = lsim(closed_loop_system, U=u, T=t, X0=x0)
+
+# 4. 結果のプロット
+plt.figure(figsize=(10, 6))
+
+# 状態 x1(t), x2(t) のプロット
+plt.plot(t, x[:, 0], label="x1(t) - Position")
+plt.plot(t, x[:, 1], label="x2(t) - Velocity")
+plt.xlabel("Time (s)")
+plt.ylabel("State values")
+plt.title("LQR Closed-Loop System Response")
+plt.legend()
+plt.grid()
+plt.show()
+
+# 操作量 u(t) の計算とプロット
+u_t = -K @ x.T  # u(t) = -K * x(t)
+
+plt.figure(figsize=(10, 4))
+plt.plot(t, u_t[0], label="Control Input u(t)", color="red")
+plt.xlabel("Time (s)")
+plt.ylabel("Control Input u(t)")
+plt.title("LQR Control Input")
+plt.grid()
+plt.show()
