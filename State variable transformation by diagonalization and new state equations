@@ -1,0 +1,54 @@
+import numpy as np
+from scipy.linalg import eig, inv
+from scipy.signal import StateSpace, lsim
+import matplotlib.pyplot as plt
+
+# 元のシステム行列の定義
+A = np.array([[0, -6], [1, -5]])
+B = np.array([[0], [1]])
+C = np.array([[1, 0]])
+D = np.array([[0]])
+
+# 1. Aの固有値と固有ベクトルを計算
+eigenvalues, eigenvectors = eig(A)
+print("固有値:", eigenvalues)
+print("固有ベクトル:\n", eigenvectors)
+
+# 2. 対角化行列 T とその逆行列 T_inv の定義
+T = eigenvectors
+T_inv = inv(T)
+print("対角化行列 T:\n", T)
+print("逆行列 T_inv:\n", T_inv)
+
+# 3. 新しいパラメータの計算 (A', B', C')
+A_prime = T_inv @ A @ T
+B_prime = T_inv @ B
+C_prime = C @ T
+
+print("変換後の行列 A':\n", A_prime)
+print("変換後の行列 B':\n", B_prime)
+print("変換後の行列 C':\n", C_prime)
+
+# 変換後の状態空間モデルの定義
+system_transformed = StateSpace(A_prime, B_prime, C_prime, D)
+
+# シミュレーション設定
+t = np.linspace(0, 10, 500)  # 時間軸
+u = np.ones_like(t)          # ステップ入力
+
+# 初期状態
+z0 = np.array([0, 0])  # 新しい状態での初期状態
+
+# 変換後のシステムのシミュレーション
+t, y, z = lsim(system_transformed, U=u, T=t, X0=z0)
+
+# 結果のプロット
+plt.figure(figsize=(10, 6))
+plt.plot(t, z[:, 0], label="z1(t) - Transformed State 1")
+plt.plot(t, z[:, 1], label="z2(t) - Transformed State 2")
+plt.xlabel("Time (s)")
+plt.ylabel("Transformed States")
+plt.title("Response of Transformed System")
+plt.legend()
+plt.grid()
+plt.show()
