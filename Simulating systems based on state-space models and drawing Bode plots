@@ -1,0 +1,60 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.signal import StateSpace, lsim, bode
+
+# 行列 A と B の定義
+A = np.array([
+    [0, 1, 0, 0],
+    [0, 0, 1, 0],
+    [0, 86.99734, 0.3369788, -0.1596426],
+    [0, 0, 0, 0]
+])
+
+B = np.array([
+    [0],
+    [0],
+    [-26.603588],
+    [0]
+])
+
+# 出力行列 C と D の定義
+C = np.array([[1, 0, 0, 0]])  # 角度 θ のみを出力とする
+D = np.array([[0]])
+
+# 状態空間モデルの作成
+system = StateSpace(A, B, C, D)
+
+# シミュレーション条件
+t = np.linspace(0, 5, 500)  # シミュレーション時間 0 から 5 秒まで
+u = np.zeros_like(t)        # 入力を 0 に設定（自由振動）
+u[0] = 1                    # 初期インパルス入力
+
+# 状態初期値（例として θ = 0.04 rad に相当する初期条件を設定）
+x0 = [0.04, 0, 0, 0]
+
+# シミュレーション実行
+_, y, x = lsim(system, U=u, T=t, X0=x0)
+
+# シミュレーション結果のプロット
+plt.figure()
+plt.plot(t, y)
+plt.xlabel("Time (s)")
+plt.ylabel("Angle θ (rad)")
+plt.title("System Response")
+plt.grid()
+plt.show()
+
+# ボード線図のプロット
+w, mag, phase = bode(system)
+
+plt.figure()
+plt.subplot(2, 1, 1)
+plt.semilogx(w, mag)  # 振幅特性
+plt.title('Bode Plot')
+plt.ylabel('Magnitude (dB)')
+
+plt.subplot(2, 1, 2)
+plt.semilogx(w, phase)  # 位相特性
+plt.xlabel('Frequency (rad/s)')
+plt.ylabel('Phase (degrees)')
+plt.show()
