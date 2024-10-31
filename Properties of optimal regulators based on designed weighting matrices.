@@ -1,0 +1,61 @@
+import numpy as np
+from scipy.linalg import solve_continuous_are
+from scipy.signal import StateSpace, lsim
+import matplotlib.pyplot as plt
+
+# システム行列の定義（例として3次システム）
+A = np.array([[0, 1, 0], [0, 0, 1], [-2, -3, -4]])
+B = np.array([[0], [0], [1]])
+C = np.array([[1, 0, 0]])
+D = np.array([[0]])
+
+# 状態空間モデルの作成
+system = StateSpace(A, B, C, D)
+
+# 異なる重み行列 Q, R の設定
+Qs = [np.diag([1, 1, 1]), np.diag([10, 1, 1]), np.diag([100, 1, 1])]
+Rs = [np.array([[0.01]]), np.array([[1]]), np.array([[100]])]  # R を 2次元配列に修正
+
+# 初期状態の定義
+x0 = [1, 0, 1]  # 初期値01のケース
+
+# シミュレーション時間の設定
+t = np.linspace(0, 10, 500)  # 0秒から10秒まで
+
+# 結果を格納するリスト
+responses = []
+
+# 各組み合わせの Q, R に対してLQRを設計
+for Q in Qs:
+    for R in Rs:
+        # リカッチ方程式を解く
+        P = solve_continuous_are(A, B, Q, R)
+        # LQRゲインの計算
+        K = np.linalg.inv(R) @ B.T @ P
+        print(f"LQR Gain for Q = {np.diag(Q)} and R = {R[0,0]}: K = {K}")
+        
+        # フィードバックゲインを適用した閉ループシステム
+        A_cl = A - B @ K
+        closed_loop_system = StateSpace(A_cl, B, C, D)
+        
+        # システム応答のシミュレーション
+        u = np.zeros_like(t)  # 入力を0とする（自由応答）
+        _, y, _ = lsim(closed_loop_system, U=u, T=t, X0=x0)
+        
+        # 結果をリストに格納
+        responses.append((np.diag(Q), R[0, 0], y))
+
+# プロット設定
+plt.figure(figsize=(10, 8))
+
+# 各結果のプロット
+for i, (Q_val, R_val, y) in enumerate(responses):
+    label = f"Q={Q_val}, R={R_val}"
+    plt.plot(t, y, label=label)
+
+plt.xlabel("Time (s)")
+plt.ylabel("Output y(t)")
+plt.title("Optimal Control System Response (LQR) with Different Q and R")
+plt.legend()
+plt.grid()
+plt.show()
