@@ -1,0 +1,61 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# システムのパラメータ設定
+dt = 1.0  # 時間ステップ
+A = np.array([[1, dt], [0, 1]])  # 状態遷移行列
+B = np.array([[0.5 * dt**2], [dt]])  # 制御入力行列
+C = np.array([[1, 0]])  # 観測行列
+Q = np.array([[0.1, 0], [0, 0.1]])  # プロセスノイズ共分散
+R = np.array([[0.1]])  # 観測ノイズ共分散
+
+# カルマンフィルタの初期設定
+x_est = np.array([[0], [0]])  # 初期推定状態
+P_est = np.eye(2)  # 初期誤差共分散
+
+# 実際のシステムの初期値
+x_true = np.array([[0], [1]])  # 初期真の状態
+num_steps = 50
+measurements = []
+
+# 観測データの生成
+np.random.seed(0)
+for _ in range(num_steps):
+    x_true = A @ x_true + B * 1  # 制御入力1と仮定
+    y = C @ x_true + np.random.normal(0, np.sqrt(R[0, 0]), size=(1, 1))  # 観測値
+    measurements.append(y.item())
+
+# カルマンフィルタ適用
+x_estimates = []
+for z in measurements:
+    # 1. 状態予測
+    x_pred = A @ x_est + B * 1
+
+    # 2. 誤差共分散予測
+    P_pred = A @ P_est @ A.T + Q
+
+    # 3. カルマンゲインの計算
+    S = C @ P_pred @ C.T + R
+    K = P_pred @ C.T @ np.linalg.inv(S)
+
+    # 4. 状態更新（事後推定）
+    y = np.array([[z]])  # 観測値
+    x_est = x_pred + K @ (y - C @ x_pred)
+
+    # 5. 誤差共分散更新
+    P_est = (np.eye(2) - K @ C) @ P_pred
+
+    # 推定結果の記録
+    x_estimates.append(x_est.flatten())
+
+# プロット
+time = np.arange(num_steps)
+x_estimates = np.array(x_estimates)
+
+plt.plot(time, x_estimates[:, 0], label='Estimated Position')
+plt.plot(time, measurements, 'k+', label='Measurements')
+plt.xlabel('Time Step')
+plt.ylabel('Position')
+plt.legend()
+plt.grid()
+plt.show()
