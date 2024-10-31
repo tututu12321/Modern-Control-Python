@@ -1,0 +1,36 @@
+import numpy as np
+from scipy.linalg import eig, solve_continuous_are
+from scipy.signal import place_poles
+
+# 定数の定義
+c1 = 1.0  # 減衰係数 c1
+k1 = 1.0  # バネ定数 k1
+m1 = 1.0  # 質量 m1
+
+# 行列 A, B の定義
+A = np.array([[-c1/m1, -k1/m1],
+              [1, 0]])
+B = np.array([[1/m1],
+              [0]])
+
+# 状態方程式の固有値（極）の計算
+eigenvalues, _ = eig(A)
+print("System poles (eigenvalues):", eigenvalues)
+
+# 可制御性行列の計算
+n = A.shape[0]
+controllability_matrix = np.hstack([np.linalg.matrix_power(A, i) @ B for i in range(n)])
+rank_of_controllability = np.linalg.matrix_rank(controllability_matrix)
+print("Controllability matrix:\n", controllability_matrix)
+print("Rank of controllability matrix:", rank_of_controllability)
+
+# フィードバックゲインの計算（極配置法）
+# 配置したい極（任意の値を設定）
+desired_poles = [-2, -3]
+K = place_poles(A, B, desired_poles).gain_matrix
+print("Feedback gain K:", K)
+
+# 極配置後の新しいA行列
+A_cl = A - B @ K
+new_eigenvalues, _ = eig(A_cl)
+print("Closed-loop system poles:", new_eigenvalues)
