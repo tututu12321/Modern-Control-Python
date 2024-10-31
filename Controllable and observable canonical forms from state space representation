@@ -1,0 +1,45 @@
+import numpy as np
+from scipy.linalg import inv, block_diag, eig
+
+# オリジナルのシステム行列
+A = np.array([[0, 1], [-2, -3]])
+B = np.array([[0], [1]])
+C = np.array([[1, 0]])
+D = np.array([[0]])
+
+# 固有多項式の計算
+p = np.poly(eig(A)[0])  # Aの固有値から多項式を取得
+print("Characteristic polynomial coefficients of A:", p)
+
+# 1. 可制御正準形への変換
+# 可制御正準形のA, B, C, D行列を構築
+n = A.shape[0]
+Ac = np.zeros((n, n))
+Bc = np.zeros((n, 1))
+Cc = np.zeros((1, n))
+
+# 可制御正準形の行列を設定
+for i in range(n):
+    if i < n - 1:
+        Ac[i, i+1] = 1
+    Bc[i, 0] = 1 if i == n - 1 else 0
+    Cc[0, i] = p[-(i+2)]
+
+print("\nControllable Canonical Form (A, B, C, D):")
+print("Ac:\n", Ac)
+print("Bc:\n", Bc)
+print("Cc:\n", Cc)
+print("D:", D)
+
+# 2. 可観測正準形への変換
+# 可観測正準形のA, B, C, D行列を構築
+Ao = Ac.T  # 可観測正準形のAは可制御正準形のAの転置
+Bo = Cc.T  # 可観測正準形のBは可制御正準形のCの転置
+Co = Bc.T  # 可観測正準形のCは可制御正準形のBの転置
+Do = D
+
+print("\nObservable Canonical Form (A, B, C, D):")
+print("Ao:\n", Ao)
+print("Bo:\n", Bo)
+print("Co:\n", Co)
+print("Do:", Do)
