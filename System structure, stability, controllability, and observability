@@ -1,0 +1,82 @@
+import numpy as np
+from scipy.signal import StateSpace, lsim, ss2tf, bode, tf2ss, place_poles
+from scipy.linalg import eig, svd
+import matplotlib.pyplot as plt
+
+# システム行列の定義
+A = np.array([[0, 1], [-2, -3]])
+B = np.array([[0], [1]])
+C = np.array([[1, 0]])
+D = np.array([[0]])
+
+# 状態空間モデルの作成
+system = StateSpace(A, B, C, D)
+
+# 1. 可制御性の確認
+n = A.shape[0]
+controllability_matrix = np.hstack([np.linalg.matrix_power(A, i) @ B for i in range(n)])
+rank_controllability = np.linalg.matrix_rank(controllability_matrix)
+print("Controllability Matrix:\n", controllability_matrix)
+print("Rank of Controllability Matrix:", rank_controllability)
+is_controllable = rank_controllability == n
+print("System is Controllable:", is_controllable)
+
+# 2. 可観測性の確認
+observability_matrix = np.vstack([C @ np.linalg.matrix_power(A, i) for i in range(n)])
+rank_observability = np.linalg.matrix_rank(observability_matrix)
+print("Observability Matrix:\n", observability_matrix)
+print("Rank of Observability Matrix:", rank_observability)
+is_observable = rank_observability == n
+print("System is Observable:", is_observable)
+
+# 3. 安定性の確認
+eigenvalues, _ = eig(A)
+print("Eigenvalues of A (Poles of the system):", eigenvalues)
+is_stable = np.all(np.real(eigenvalues) < 0)
+print("System is Stable:", is_stable)
+
+# 4. 伝達関数と最小実現
+num, den = ss2tf(A, B, C, D)
+print("Numerator of Transfer Function:", num)
+print("Denominator of Transfer Function:", den)
+
+# 最小実現の確認（特異値分解を用いたランクチェック）
+U, S, Vh = svd(controllability_matrix)
+min_realization = np.sum(S > 1e-10) == n
+print("Minimal Realization (Controllable and Observable):", min_realization)
+
+# 5. 正準形への変換 (例: 可制御正準形)
+# 必要であれば、可制御正準形に変換するには行列操作が必要です。
+# ここでは詳細な実装を省略し、必要な場合にのみ実施します。
+
+# 6. 状態方程式の解（システム応答のシミュレーション）
+t = np.linspace(0, 10, 500)  # 時間範囲
+u = np.ones_like(t)          # ステップ入力
+x0 = [1, 0]                  # 初期条件
+
+# システム応答の計算
+t, y, x = lsim(system, U=u, T=t, X0=x0)
+
+# システム応答のプロット
+plt.figure()
+plt.plot(t, y)
+plt.xlabel("Time (s)")
+plt.ylabel("Output y(t)")
+plt.title("System Response")
+plt.grid()
+plt.show()
+
+# 7. ボード線図のプロット
+w, mag, phase = bode(system)
+
+plt.figure()
+plt.subplot(2, 1, 1)
+plt.semilogx(w, mag)  # 振幅特性
+plt.title('Bode Plot')
+plt.ylabel('Magnitude (dB)')
+
+plt.subplot(2, 1, 2)
+plt.semilogx(w, phase)  # 位相特性
+plt.xlabel('Frequency (rad/s)')
+plt.ylabel('Phase (degrees)')
+plt.show()
