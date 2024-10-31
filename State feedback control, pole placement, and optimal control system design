@@ -1,0 +1,73 @@
+import numpy as np
+from scipy.signal import place_poles, StateSpace, lsim, bode
+from scipy.linalg import solve_continuous_are
+import matplotlib.pyplot as plt
+
+# システム行列の定義
+A = np.array([[0, 1], [-2, -3]])
+B = np.array([[0], [1]])
+C = np.array([[1, 0]])
+D = np.array([[0]])
+
+# 状態空間モデルの作成
+system = StateSpace(A, B, C, D)
+
+# 1. 極配置法によるフィードバックゲインの計算
+# 配置したい極を指定
+desired_poles = [-2 + 2j, -2 - 2j]
+place_result = place_poles(A, B, desired_poles)
+K_pole_placement = place_result.gain_matrix
+print("Pole Placement Feedback Gain K:", K_pole_placement)
+
+# 2. 最適制御系（LQR）の設計
+# 重み行列の定義（Q と R の設定）
+Q = np.array([[10, 0], [0, 1]])  # 状態の重み行列
+R = np.array([[1]])               # 入力の重み行列
+
+# リカッチ方程式を解いて最適ゲイン K を計算
+P = solve_continuous_are(A, B, Q, R)
+K_lqr = np.linalg.inv(R) @ B.T @ P
+print("LQR Feedback Gain K:", K_lqr)
+
+# 3. 状態フィードバックを適用した閉ループシステムの行列
+A_cl_pole_placement = A - B @ K_pole_placement
+A_cl_lqr = A - B @ K_lqr
+
+# 4. シミュレーション設定と実行
+t = np.linspace(0, 10, 500)  # シミュレーション時間
+u = np.zeros_like(t)          # 入力を 0 に設定（初期値のみでの応答確認）
+x0 = [1, 0]                   # 初期状態
+
+# 極配置法による閉ループ応答
+system_cl_pole = StateSpace(A_cl_pole_placement, B, C, D)
+t, y_pole, _ = lsim(system_cl_pole, U=u, T=t, X0=x0)
+
+# LQRによる閉ループ応答
+system_cl_lqr = StateSpace(A_cl_lqr, B, C, D)
+t, y_lqr, _ = lsim(system_cl_lqr, U=u, T=t, X0=x0)
+
+# 5. 結果のプロット
+plt.figure()
+plt.plot(t, y_pole, label="Pole Placement")
+plt.plot(t, y_lqr, label="LQR")
+plt.xlabel("Time (s)")
+plt.ylabel("Output y(t)")
+plt.title("Closed-Loop System Response")
+plt.legend()
+plt.grid()
+plt.show()
+
+# 6. ボード線図のプロット（LQRでの閉ループシステムの周波数応答）
+w, mag, phase = bode(system_cl_lqr)
+
+plt.figure()
+plt.subplot(2, 1, 1)
+plt.semilogx(w, mag)  # 振幅特性
+plt.title('Bode Plot (LQR Closed-Loop)')
+plt.ylabel('Magnitude (dB)')
+
+plt.subplot(2, 1, 2)
+plt.semilogx(w, phase)  # 位相特性
+plt.xlabel('Frequency (rad/s)')
+plt.ylabel('Phase (degrees)')
+plt.show()
