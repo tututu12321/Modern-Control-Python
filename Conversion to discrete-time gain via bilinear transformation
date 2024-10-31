@@ -1,0 +1,35 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.signal import TransferFunction, bilinear, dstep, step
+
+# Define the continuous-time transfer function G(s) = 1 / (s^2 + 2s + 5)
+num_ct = [1]          # Numerator of G(s)
+den_ct = [1, 2, 5]    # Denominator of G(s)
+system_ct = TransferFunction(num_ct, den_ct)  # Continuous-time system
+
+# Sampling period
+T = 0.1  # Adjust this as needed for your application
+
+# Apply the bilinear transform to get the discrete-time transfer function
+num_dt, den_dt = bilinear(num_ct, den_ct, fs=1/T)
+system_dt = TransferFunction(num_dt, den_dt, dt=T)  # Discrete-time system
+
+# Generate the step responses for comparison
+# Step response for the continuous-time system
+t_ct, y_ct = step(system_ct)
+
+# Step response for the discrete-time system
+t_dt, y_dt = dstep(system_dt)
+t_dt = np.squeeze(t_dt) * T  # Scale by T to match continuous time
+y_dt = np.squeeze(y_dt)
+
+# Plotting the results
+plt.figure(figsize=(10, 6))
+plt.plot(t_ct, y_ct, label="Continuous-Time Step Response")
+plt.step(t_dt, y_dt, label="Discrete-Time Step Response (Bilinear Transform)", where="post")
+plt.xlabel("Time [s]")
+plt.ylabel("Response")
+plt.title("Comparison of Continuous and Discrete-Time Step Responses")
+plt.legend()
+plt.grid(True)
+plt.show()
