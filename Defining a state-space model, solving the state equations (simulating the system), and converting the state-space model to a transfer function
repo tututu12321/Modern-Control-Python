@@ -1,0 +1,53 @@
+import numpy as np
+from scipy.signal import StateSpace, lsim, ss2tf
+import matplotlib.pyplot as plt
+
+# システム行列の定義
+A = np.array([[0, 1], [-2, -3]])
+B = np.array([[0], [1]])
+C = np.array([[1, 0]])
+D = np.array([[0]])
+
+# 状態空間モデルの作成
+system = StateSpace(A, B, C, D)
+
+# 1. 状態方程式の解（システム応答のシミュレーション）
+t = np.linspace(0, 10, 500)  # 時間範囲
+u = np.ones_like(t)          # ステップ入力
+x0 = [1, 0]                  # 初期条件
+
+# システム応答の計算
+t, y, x = lsim(system, U=u, T=t, X0=x0)
+
+# システム応答のプロット
+plt.figure()
+plt.plot(t, y)
+plt.xlabel("Time (s)")
+plt.ylabel("Output y(t)")
+plt.title("System Response")
+plt.grid()
+plt.show()
+
+# 2. 状態空間モデルから伝達関数への変換
+num, den = ss2tf(A, B, C, D)
+
+# 伝達関数の表示
+print("Numerator coefficients of transfer function:", num)
+print("Denominator coefficients of transfer function:", den)
+
+# 伝達関数のプロット（周波数応答 - ボード線図）
+from scipy.signal import bode
+
+w, mag, phase = bode(system)
+
+plt.figure()
+plt.subplot(2, 1, 1)
+plt.semilogx(w, mag)  # 振幅特性
+plt.title('Bode Plot')
+plt.ylabel('Magnitude (dB)')
+
+plt.subplot(2, 1, 2)
+plt.semilogx(w, phase)  # 位相特性
+plt.xlabel('Frequency (rad/s)')
+plt.ylabel('Phase (degrees)')
+plt.show()
