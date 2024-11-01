@@ -1,0 +1,68 @@
+import numpy as np
+from scipy.integrate import solve_ivp
+import matplotlib.pyplot as plt
+
+# Define constants based on the provided system
+M = 1.0  # Mass M
+m = 0.5  # Mass m
+l = 0.5  # Length l
+g = 9.81  # Gravity
+J = 0.02  # Moment of inertia J
+
+# Define derived constant alpha
+alpha = (M + m) * (J + m * l ** 2) - (m * l) ** 2
+
+# Define system matrices for state-space representation
+A = np.array([[0, 0, 1, 0],
+              [0, 0, 0, 1],
+              [0, -m * l**2 * g / alpha, 0, (J + m * l**2) / alpha],
+              [0, (M + m) * m * g * l / alpha, 0, -m * l / alpha]])
+
+B = np.array([[0],
+              [0],
+              [(J + m * l**2) / alpha],
+              [-m * l / alpha]])
+
+C = np.array([[1, 0, 0, 0]])
+
+# Define initial state and time parameters
+initial_state = np.array([0.0, 0.1, 0.0, 0.0])  # Initial condition with a small angle
+t_span = (0, 10)  # 10 seconds
+t_eval = np.linspace(*t_span, 500)  # Evaluation points
+
+# Define control input u(t) as a constant (e.g., f(t) = 0 for free response)
+def control_input(t):
+    return 0.0
+
+# Define the system dynamics for the state-space model
+def state_space_dynamics(t, state):
+    x = np.reshape(state, (4, 1))
+    u = control_input(t)
+    dxdt = A @ x + B * u
+    return dxdt.flatten()
+
+# Solve the state-space model
+solution = solve_ivp(state_space_dynamics, t_span, initial_state, t_eval=t_eval)
+
+# Extract the states
+z = solution.y[0]  # Position z(t)
+theta = solution.y[1]  # Angle theta(t)
+
+# Plotting the results
+plt.figure(figsize=(12, 6))
+plt.subplot(2, 1, 1)
+plt.plot(solution.t, z, label="Position $z(t)$")
+plt.xlabel("Time [s]")
+plt.ylabel("Position $z(t)$ [m]")
+plt.legend()
+plt.grid()
+
+plt.subplot(2, 1, 2)
+plt.plot(solution.t, theta, label="Angle $\\theta(t)$", color='orange')
+plt.xlabel("Time [s]")
+plt.ylabel("Angle $\\theta(t)$ [rad]")
+plt.legend()
+plt.grid()
+
+plt.tight_layout()
+plt.show()
