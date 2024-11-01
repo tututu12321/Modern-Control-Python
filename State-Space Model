@@ -1,0 +1,83 @@
+import numpy as np
+from scipy.linalg import expm
+import matplotlib.pyplot as plt
+
+class StateSpaceModel:
+    def __init__(self, A, B, C, dt):
+        """
+        Initialize the state-space model.
+        
+        Parameters:
+        - A (ndarray): State transition matrix
+        - B (ndarray): Input matrix
+        - C (ndarray): Output matrix
+        - dt (float): Time step for discretization
+        """
+        self.A = A
+        self.B = B
+        self.C = C
+        self.dt = dt
+        self.state = np.zeros((A.shape[0], 1))  # Initial state
+
+        # Discretize A matrix using Euler's method
+        self.A_d = expm(self.A * self.dt)
+        self.B_d = self.B * self.dt
+
+    def step(self, x_t):
+        """
+        Perform a single time step update in the SSM.
+        
+        Parameters:
+        - x_t (ndarray): Input at the current time step
+        
+        Returns:
+        - y_t (ndarray): Output at the current time step
+        """
+        # Update state
+        self.state = self.A_d @ self.state + self.B_d @ x_t
+        # Compute output
+        y_t = self.C @ self.state
+        return y_t
+
+    def run(self, X):
+        """
+        Run the SSM over a sequence of inputs.
+        
+        Parameters:
+        - X (ndarray): Input sequence of shape (sequence_length, input_dim)
+        
+        Returns:
+        - Y (ndarray): Output sequence of shape (sequence_length, output_dim)
+        """
+        Y = []
+        for x_t in X:
+            y_t = self.step(x_t)
+            Y.append(y_t)
+        return np.array(Y)
+
+# Define model parameters
+A = np.array([[0.9, 0.1], [-0.1, 0.9]])  # Example state transition matrix
+B = np.array([[1], [0]])                 # Example input matrix
+C = np.array([[1, 0]])                   # Example output matrix
+dt = 0.1                                 # Time step for discretization
+
+# Initialize the state-space model
+ssm = StateSpaceModel(A, B, C, dt)
+
+# Input sequence (for example, a sequence of sine waves)
+sequence_length = 100
+X = np.sin(np.linspace(0, 2 * np.pi, sequence_length)).reshape(-1, 1)
+
+# Run the model
+Y = ssm.run(X).flatten()  # Flatten Y for easy plotting
+
+# Plot the input and output sequences
+plt.figure(figsize=(10, 6))
+plt.plot(X, label='Input Sequence (X)', linestyle='--', color='blue')
+plt.plot(Y, label='Output Sequence (Y)', color='red')
+plt.xlabel('Time Steps')
+plt.ylabel('Amplitude')
+plt.title('State-Space Model Input and Output Sequences')
+plt.legend()
+plt.grid()
+plt.show()
