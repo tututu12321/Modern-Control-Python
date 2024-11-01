@@ -1,0 +1,49 @@
+import numpy as np
+import scipy.linalg
+from scipy.signal import place_poles
+
+# Define system matrices
+A = np.array([[1, 2], [-3, -4]])
+B = np.array([[2], [3]])
+C = np.array([[1, 0]])
+
+# Desired closed-loop poles for state feedback
+desired_poles_feedback = [-3, -7]
+
+# Check controllability
+U_c = np.hstack([B, np.dot(A, B)])
+rank_Uc = np.linalg.matrix_rank(U_c)
+print("Controllability Matrix:\n", U_c)
+print("Rank of Controllability Matrix:", rank_Uc)
+if rank_Uc == A.shape[0]:
+    print("The system is controllable.")
+else:
+    print("The system is not controllable.")
+
+# Compute state feedback gain F
+place_obj_feedback = place_poles(A, B, desired_poles_feedback)
+F = place_obj_feedback.gain_matrix
+print("State Feedback Gain, F:\n", F)
+
+# Define desired poles for observer (should be faster than feedback poles)
+desired_poles_observer_1 = [-8, -9]
+desired_poles_observer_2 = [-9, -10]
+
+# Check observability
+U_o = np.vstack([C, np.dot(C, A)])
+rank_Uo = np.linalg.matrix_rank(U_o)
+print("\nObservability Matrix:\n", U_o)
+print("Rank of Observability Matrix:", rank_Uo)
+if rank_Uo == A.shape[0]:
+    print("The system is observable.")
+else:
+    print("The system is not observable.")
+
+# Compute observer gain H for two sets of desired poles
+place_obj_observer_1 = place_poles(A.T, C.T, desired_poles_observer_1)
+H1 = place_obj_observer_1.gain_matrix.T
+print("\nObserver Gain for poles -8, -9:\n", H1)
+
+place_obj_observer_2 = place_poles(A.T, C.T, desired_poles_observer_2)
+H2 = place_obj_observer_2.gain_matrix.T
+print("\nObserver Gain for poles -9, -10:\n", H2)
